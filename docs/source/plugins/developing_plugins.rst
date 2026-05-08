@@ -40,8 +40,8 @@ Python plugins are built using the `fiftyone` package, pip packages, and your
 own Python. They can consist of panels and operators.
 
 JS plugins are built using the `@fiftyone` TypeScript packages, npm packages,
-and your own TypeScript. They can consist of panels, operators, and custom
-components.
+and your own TypeScript. They can consist of panels, operators, custom
+components, and :ref:`3D node types <plugins-design-3d-nodes>`.
 
 .. _plugins-design-panels:
 
@@ -118,6 +118,85 @@ complex input and output forms for your operators.
 
     Jump to :ref:`this section <developing-js-plugins>` for more information
     about developing components.
+
+.. _plugins-design-3d-nodes:
+
+3D node types
+-------------
+
+3D node type plugins extend the fo3d format with custom renderers. A plugin
+registers a React component that is rendered as a child of the 3D
+visualizer's R3F ``<Canvas>`` whenever a fo3d scene contains a node of the
+matching type. This enables custom geometry, shader-based rendering, or
+metadata overlays without forking FiftyOne.
+
+A 3D node type plugin has two pieces:
+
+- **Python (optional)** — author fo3d scenes referencing the custom node
+  type using :class:`fo.PluginNode <fiftyone.core.threed.plugin_node.PluginNode>`.
+  Pass any custom fields under the ``data`` argument; they are forwarded
+  verbatim to the JS component.
+
+- **JavaScript** — register the renderer by calling ``register3dNodeType``
+  from ``@fiftyone/plugins``. The component receives the node's transform
+  (`position`, `quaternion`, `scale`) and the ``data`` payload. It runs
+  inside the host's ``<Canvas>``, so R3F hooks like ``useFrame`` and
+  ``useThree`` from ``@react-three/fiber`` are in scope.
+
+Authoring a scene from Python:
+
+.. code-block:: python
+
+    import fiftyone as fo
+
+    scene = fo.Scene()
+    scene.add(fo.PluginNode(
+        name="my-node",
+        plugin_type="customNode",
+        data={"fieldA": "abc-123", "fieldB": "value"},
+    ))
+    scene.write("/path/to/scene.fo3d")
+
+Registering the renderer in your plugin's JS bundle:
+
+.. code-block:: tsx
+
+    import { register3dNodeType } from "@fiftyone/plugins";
+    import { useFrame } from "@react-three/fiber";
+
+    register3dNodeType("customNode", ({ data, position, quaternion, scale }) => {
+        const { fieldA, fieldB } = data as {
+            fieldA: string;
+            fieldB?: string;
+        };
+
+        // R3F hooks (useFrame, useThree) and Three.js primitives are in
+        // scope. Render any geometry as a child of the host's <Canvas>.
+        return (
+            <mesh position={position} quaternion={quaternion} scale={scale}>
+                {/* ...your custom geometry... */}
+            </mesh>
+        );
+    });
+
+The plugin's ``vite.config.ts`` must externalize ``@react-three/fiber``,
+``three``, ``@fiftyone/plugins``, ``react``, and ``recoil`` against the
+host's globals (``__r3f__``, ``__three__``, ``__fop__``, ``React``,
+``recoil``) so the host's R3F context, WebGL renderer, and React instance
+are shared. Bundling duplicate copies of ``@react-three/fiber`` or
+``three`` will silently break the R3F context.
+
+.. note::
+
+    ``PluginNode`` is the only supported way to author frontend-rendered
+    custom nodes. The 3D visualizer's parser only dispatches nodes whose
+    ``_type`` is ``PluginNode``, and Python raises ``ValueError`` on any
+    unknown ``_type``. Subclassing :class:`Object3D
+    <fiftyone.core.threed.object_3d.Object3D>` in a plugin will not
+    render and will break readers where the plugin's Python isn't loaded.
+
+    The ``data`` dict is forwarded to the JS component verbatim — keys
+    appear on the JS side exactly as you wrote them in Python.
 
 .. _developing-plugins-setup:
 

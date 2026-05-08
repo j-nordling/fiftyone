@@ -204,6 +204,7 @@ from .core.threed import (
     AmbientLight,
     SpotLight,
     PointCloud,
+    PluginNode,
     MeshBasicMaterial,
     MeshDepthMaterial,
     MeshLambertMaterial,

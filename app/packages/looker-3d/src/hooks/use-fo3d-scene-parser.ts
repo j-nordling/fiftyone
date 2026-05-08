@@ -13,6 +13,7 @@ import {
   PcdAsset,
   PlaneGeometryAsset,
   PlyAsset,
+  Plugin3dNodeAsset,
   SphereGeometryAsset,
   StlAsset,
 } from "../fo3d/render-types";
@@ -230,6 +231,18 @@ const parseAsset = (node: FoSceneRawNode): MeshAsset | undefined => {
         meshMaterial
       );
     }
+  }
+
+  // Plugin-rendered node: `fo.PluginNode(plugin_type=..., data=...)` from
+  // Python writes `_type: "PluginNode"` with the renderer key in
+  // `pluginType` and the opaque payload in `data`.
+  if (nodeType === "pluginnode" && hasStringField(node, "pluginType")) {
+    const rawData = (node as NodeRecord).data;
+    const data =
+      rawData && typeof rawData === "object" && !Array.isArray(rawData)
+        ? (rawData as Record<string, unknown>)
+        : {};
+    return new Plugin3dNodeAsset(node.pluginType, data);
   }
 
   return undefined;

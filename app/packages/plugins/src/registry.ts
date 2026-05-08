@@ -1,4 +1,5 @@
 import React, { FunctionComponent, useMemo, useSyncExternalStore } from "react";
+import type { Quaternion, Vector3 } from "three";
 import { wrapCustomComponent } from "./components";
 import type {
   SampleRendererOptions,
@@ -140,12 +141,15 @@ export function usePluginComponent(name: string, ctx: Record<string, unknown>) {
  * - `Panel` - A panel that can be added to `@fiftyone/spaces`
  * - `Plot` - **deprecated** - A plot that can be added as a panel
  * - `SampleRenderer` - A custom renderer for non-native sample media
+ * - `Scene3D` - A custom fo3d node type rendered inside the 3D visualizer's
+ *   `<Canvas>`. Registered via `register3dNodeType`.
  */
 export enum PluginComponentType {
   Plot = 1,
   Panel = 2,
   Component = 3,
   SampleRenderer = 4,
+  Scene3D = 5,
 
   /**
    * DO NOT CHANGE THE VALUES OF THESE ENUMS for backward compatibility.
@@ -303,11 +307,66 @@ type BaseSampleRendererRegistration<TSample = unknown> =
 export type SampleRendererRegistration<TSample = unknown> =
   BaseSampleRendererRegistration<TSample>;
 
+/**
+ * Props passed to a registered Scene3D plugin component.
+ *
+ * The component renders inside the 3D visualizer's `<Canvas>`, so R3F hooks
+ * (e.g. `useFrame`, `useThree` from `@react-three/fiber`) are in scope.
+ */
+export type Plugin3dNodeProps = {
+  /** The fo3d node's name (unique within a scene; use as a stable id). */
+  name: string;
+  /** The plugin type string the node was registered under. */
+  pluginType: string;
+  /** Custom fields the plugin author authored on the fo3d node. */
+  data: Record<string, unknown>;
+  /** Resolved position from the fo3d transform. */
+  position: Vector3;
+  /** Resolved quaternion from the fo3d transform. */
+  quaternion: Quaternion;
+  /** Resolved scale from the fo3d transform. */
+  scale: Vector3;
+  /** Children scene nodes parsed underneath this node. */
+  children?: React.ReactNode;
+};
+
+export type Scene3DRegistration = BasePluginComponentRegistration<
+  PluginComponentType.Scene3D,
+  Plugin3dNodeProps
+> & {
+  panelOptions?: never;
+  sampleRendererOptions?: never;
+};
+
 export interface PluginComponentRegistrationByType {
   [PluginComponentType.Plot]: PlotRegistration;
   [PluginComponentType.Panel]: PanelRegistration;
   [PluginComponentType.Component]: ComponentRegistration;
   [PluginComponentType.SampleRenderer]: SampleRendererRegistration;
+  [PluginComponentType.Scene3D]: Scene3DRegistration;
+}
+
+/**
+ * Register a custom fo3d node-type renderer.
+ *
+ * The fo3d JSON node's `_type` field (case-insensitive) is matched against
+ * `typeName`. When a scene contains such a node, the registered component
+ * receives the node's transform and custom data and is rendered inside the
+ * 3D visualizer's `<Canvas>`.
+ *
+ * @param typeName The fo3d `_type` string (matched case-insensitively).
+ * @param component The React component to render for nodes of this type.
+ */
+export function register3dNodeType(
+  typeName: string,
+  component: FunctionComponent<Plugin3dNodeProps>
+) {
+  registerComponent<PluginComponentType.Scene3D>({
+    name: typeName.toLowerCase(),
+    label: typeName,
+    type: PluginComponentType.Scene3D,
+    component,
+  });
 }
 
 export type PluginComponentRegistration =

@@ -17,6 +17,7 @@ from .material_3d import (
 )
 from .mesh import FbxMesh, GltfMesh, ObjMesh, PlyMesh, StlMesh
 from .object_3d import Object3D
+from .plugin_node import PluginNode
 from .pointcloud import *
 from .scene_3d import *
 from .shape_3d import (

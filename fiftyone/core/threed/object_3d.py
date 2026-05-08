@@ -27,6 +27,25 @@ from .utils import FO3D_VERSION_KEY
 threed = fou.lazy_import("fiftyone.core.threed")
 
 
+#: Top-level keys reserved by the fo3d node schema. They are stripped from
+#: a dict before being forwarded as kwargs to an :class:`Object3D` subclass
+#: constructor in :meth:`Object3D._from_dict`.
+_RESERVED_FO3D_KEYS = frozenset(
+    {
+        "_type",
+        FO3D_VERSION_KEY,
+        "uuid",
+        "name",
+        "visible",
+        "children",
+        "position",
+        "quaternion",
+        "scale",
+        "default_material",
+    }
+)
+
+
 class Object3D(object):
     """The base class for all 3D objects in the scene.
 
@@ -466,24 +485,24 @@ class Object3D(object):
             raise ValueError("json_data must be a dictionary")
 
         cls_name = dict_data.get("_type", "Object3D")
-        clz = getattr(threed, cls_name, Object3D)
+        clz = getattr(threed, cls_name, None)
+
+        if clz is None:
+            # Unknown `_type` is unrecoverable: we'd have to silently drop
+            # subclass-specific fields. Authors who want to ship custom
+            # node types whose Python helper may not be loaded in every
+            # reader process should use
+            # :class:`fiftyone.core.threed.plugin_node.PluginNode`.
+            raise ValueError(
+                f"Unknown fo3d node _type {cls_name!r}. "
+                "Use fo.PluginNode(plugin_type=..., data=...) for "
+                "frontend-rendered custom nodes."
+            )
 
         clz_main_args = {
             k: v
             for k, v in dict_data.items()
-            if k
-            not in [
-                "_type",
-                FO3D_VERSION_KEY,
-                "uuid",
-                "name",
-                "visible",
-                "children",
-                "position",
-                "quaternion",
-                "scale",
-                "default_material",
-            ]
+            if k not in _RESERVED_FO3D_KEYS
         }
 
         if cls_name == "Scene":

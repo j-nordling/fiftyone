@@ -109,6 +109,19 @@ export class StlAsset {
   ) {}
 }
 
+/**
+ * Carrier for `_type: "PluginNode"` fo3d nodes. Renders via a component
+ * registered with `register3dNodeType` from `@fiftyone/plugins`. The
+ * `pluginType` string keys the registry lookup; `data` is forwarded
+ * verbatim to the registered component as its `data` prop.
+ */
+export class Plugin3dNodeAsset {
+  constructor(
+    readonly pluginType: string,
+    readonly data: Record<string, unknown>
+  ) {}
+}
+
 export type MeshAsset =
   | FbxAsset
   | GltfAsset
@@ -119,7 +132,8 @@ export type MeshAsset =
   | BoxGeometryAsset
   | CylinderGeometryAsset
   | PlaneGeometryAsset
-  | SphereGeometryAsset;
+  | SphereGeometryAsset
+  | Plugin3dNodeAsset;
 
 export type FoMaterial3D = {
   opacity: number;

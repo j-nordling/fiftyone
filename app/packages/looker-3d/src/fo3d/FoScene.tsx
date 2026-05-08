@@ -1,3 +1,8 @@
+import {
+  PluginComponentType,
+  type Plugin3dNodeProps,
+  useActivePlugins,
+} from "@fiftyone/plugins";
 import { useControls } from "leva";
 import { Suspense, useEffect, useMemo } from "react";
 import { useRecoilValue, useSetRecoilState } from "recoil";
@@ -25,6 +30,7 @@ import {
   PcdAsset,
   PlaneGeometryAsset,
   PlyAsset,
+  Plugin3dNodeAsset,
   SphereGeometryAsset,
   StlAsset,
 } from "./render-types";
@@ -176,9 +182,63 @@ const getAssetJsx = (node: FoSceneNode, children: React.ReactNode) => {
         {children}
       </Plane>
     );
+  } else if (node.asset instanceof Plugin3dNodeAsset) {
+    return (
+      <Plugin3dNodeRenderer
+        key={key}
+        node={node}
+        asset={node.asset as Plugin3dNodeAsset}
+      >
+        {children}
+      </Plugin3dNodeRenderer>
+    );
   }
 
   return null;
+};
+
+const EMPTY_CTX: Record<string, unknown> = {};
+
+const Plugin3dNodeRenderer = ({
+  node,
+  asset,
+  children,
+}: {
+  node: FoSceneNode;
+  asset: Plugin3dNodeAsset;
+  children: React.ReactNode;
+}) => {
+  // Subscribes to the plugin registry — re-renders when a Scene3D plugin
+  // registers (or unregisters), which is how late-loading external plugin
+  // bundles get picked up after the initial scene parse.
+  const plugins = useActivePlugins(PluginComponentType.Scene3D, EMPTY_CTX);
+
+  const registration = useMemo(
+    () =>
+      plugins.find(
+        (p) => p.name === asset.pluginType.toLowerCase()
+      ),
+    [plugins, asset.pluginType]
+  );
+
+  if (!registration) {
+    return null;
+  }
+
+  const Component = registration.component as React.FunctionComponent<Plugin3dNodeProps>;
+
+  return (
+    <Component
+      name={node.name}
+      pluginType={asset.pluginType}
+      data={asset.data}
+      position={node.position}
+      quaternion={node.quaternion}
+      scale={node.scale}
+    >
+      {children}
+    </Component>
+  );
 };
 
 const R3fNode = ({

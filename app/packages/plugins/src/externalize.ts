@@ -10,10 +10,12 @@ import * as fosl from "@fiftyone/spotlight";
 import * as fos from "@fiftyone/state";
 import * as fou from "@fiftyone/utilities";
 import * as mui from "@mui/material";
+import * as r3f from "@react-three/fiber";
 import React from "react";
 import ReactDOM from "react-dom";
 import * as recoil from "recoil";
 import styled from "styled-components";
+import * as three from "three";
 
 declare global {
   interface Window {
@@ -33,6 +35,8 @@ declare global {
     __fof__: typeof fof;
     __mui__: typeof mui;
     __styled__: typeof styled;
+    __r3f__: typeof r3f;
+    __three__: typeof three;
 
     // todo: the following cannot be externalized because of unknown reason
     // __focore__: typeof focore;
@@ -61,6 +65,11 @@ if (typeof window !== "undefined") {
   window.__fosl__ = fosl;
   window.__fof__ = fof;
   window.__styled__ = styled;
+  // Three.js + R3F must share a single instance with looker-3d. Plugin
+  // bundles externalize `@react-three/fiber` and `three` against these
+  // globals so the host's R3F context (and the WebGL renderer) is shared.
+  window.__r3f__ = r3f;
+  window.__three__ = three;
   // todo: the following cannot be externalized because of unknown reason
   // window.__fol3d__ = fol3d;
   // window.__foe__ = foe;
