@@ -194,6 +194,7 @@ from .core.threed import (
     PlaneGeometry,
     SphereGeometry,
     FbxMesh,
+    GaussianSplat,
     GltfMesh,
     MirisStream,
     ObjMesh,

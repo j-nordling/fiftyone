@@ -7,6 +7,7 @@ import {
   type FoPointcloudMaterialProps,
   type FoScene,
   type FoSceneNode,
+  GaussianSplatAsset,
   GltfAsset,
   type MeshAsset,
   MirisStreamAsset,
@@ -103,6 +104,10 @@ const toQuaternion = (
 const parseAsset = (node: FoSceneRawNode): MeshAsset | undefined => {
   const nodeType = node._type.toLowerCase();
   const material = node.defaultMaterial;
+
+  if (nodeType === "gaussiansplat" && hasStringField(node, "plyPath")) {
+    return new GaussianSplatAsset(node.plyPath);
+  }
 
   if (nodeType === "mirisstream" && hasStringField(node, "assetUuid")) {
     return new MirisStreamAsset(

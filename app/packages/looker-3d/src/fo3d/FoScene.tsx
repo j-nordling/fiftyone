@@ -10,6 +10,7 @@ import { Fo3dBackground } from "./Background";
 import { useFo3dContext } from "./context";
 import { Fbx } from "./mesh/Fbx";
 import { Gltf } from "./mesh/Gltf";
+import { GaussianSplat } from "./mesh/GaussianSplat";
 import { MirisStream } from "./mesh/MirisStream";
 import { Obj } from "./mesh/Obj";
 import { Ply } from "./mesh/Ply";
@@ -21,6 +22,7 @@ import {
   FbxAsset,
   type FoScene,
   type FoSceneNode,
+  GaussianSplatAsset,
   GltfAsset,
   MirisStreamAsset,
   ObjAsset,
@@ -177,6 +179,19 @@ const getAssetJsx = (node: FoSceneNode, children: React.ReactNode) => {
       >
         {children}
       </Plane>
+    );
+  } else if (node.asset instanceof GaussianSplatAsset) {
+    return (
+      <GaussianSplat
+        key={key}
+        name={node.name}
+        asset={node.asset as GaussianSplatAsset}
+        position={node.position}
+        quaternion={node.quaternion}
+        scale={node.scale}
+      >
+        {children}
+      </GaussianSplat>
     );
   } else if (node.asset instanceof MirisStreamAsset) {
     return (

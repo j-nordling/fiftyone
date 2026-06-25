@@ -15,6 +15,7 @@ from .material_3d import (
     MeshPhongMaterial,
     PointCloudMaterial,
 )
+from .gaussian_splat import GaussianSplat
 from .mesh import FbxMesh, GltfMesh, ObjMesh, PlyMesh, StlMesh
 from .miris_stream import MirisStream
 from .object_3d import Object3D

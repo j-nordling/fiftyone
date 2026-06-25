@@ -116,9 +116,14 @@ export class MirisStreamAsset {
   ) {}
 }
 
+export class GaussianSplatAsset {
+  constructor(readonly plyPath: string) {}
+}
+
 export type MeshAsset =
   | FbxAsset
   | GltfAsset
+  | GaussianSplatAsset
   | ObjAsset
   | PcdAsset
   | PlyAsset
